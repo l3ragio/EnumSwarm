@@ -8,3 +8,6 @@ This tool provides an extensive analysis of a target's infrastructure by checkin
 EnumSwarm is designed with the user in mind, offering a highly intuitive interface and efficient performance. Whether you are an experienced penetration tester or just starting out, EnumSwarm is the ideal solution for your reconnaissance and enumeration needs.
 
 Don't miss out on this powerful tool, get started with EnumSwarm today and take your reconnaissance and enumeration skills to the next level!
+
+#basic usage:
+python3 EnumSwarm.py -d <domain-name>
