@@ -5,9 +5,31 @@ import sys
 import argparse
 import requests
 from lxml import html
+# import html
+# import lxml
 import urllib3
 import time
 import nmap
+
+import waybkurls.waybackurl
+# from more_itertools import flatten
+
+from PyFunceble import URLAvailabilityChecker
+
+
+
+
+
+def flatten(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, str):
+            result.append(item)
+        elif isinstance(item, list):
+            result.extend(flatten(item))
+        else:
+            raise TypeError("Unsupported type: {}".format(type(item)))
+    return result
 
 # Create an instance of the nmap.PortScanner class
 def check_port_syn_scan(target):
@@ -19,7 +41,7 @@ def check_port_syn_scan(target):
         for port in nm[host]['tcp']:
             if nm[host]['tcp'][port]['state'] == 'open':
                 positive_results.append(target + ':' + str(port))
-    return positive_results
+    return list(flatten(positive_results))
 
 # Nobody wants to see SSL warnings :-P
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -39,7 +61,7 @@ def doSleep(timing):
 
 def save_list_to_file(file_path, list_to_save):
     with open(file_path, 'w') as f:
-        for item in list_to_save:
+        for item in list(flatten(list_to_save)):
             f.write("%s\n" % item)
 
 def getHostnames(domain):
@@ -68,7 +90,7 @@ def getHostnames(domain):
 			for hostname in hostnames:
 				print(hostname)
 
-			return hostnames
+			return list(flatten(hostnames))
 		return None
 
 
@@ -119,10 +141,34 @@ Examples:
 	sub_domains=	getHostnames(domains[0])
 	save_list_to_file("domain-list.txt",sub_domains)
 
-	host_ports = []
-	for sub_domain in sub_domains:
-		result = check_port_syn_scan(sub_domain)
-		if len(result)!=0:
-			host_ports.append(result)
-	save_list_to_file("host-ports.txt",host_ports)
-	print(host_ports)
+	# host_ports = []
+	# for sub_domain in sub_domains:
+	# 	result = check_port_syn_scan(sub_domain)
+	# 	if len(result)!=0:
+	# 		host_ports.append(result)
+	# save_list_to_file("host-ports.txt",host_ports)
+
+	wbku = waybkurls.waybackurl.waybackurls(sub_domains)
+
+	save_list_to_file("wbkurl.txt",wbku)
+
+# availabilitycheck
+	availables= []
+	for element in flatten(wbku):
+		the_status = URLAvailabilityChecker(
+			"http://"+element
+		).get_status()
+		print(f"{element} is available ? {the_status.is_available()}")
+		if the_status.is_available():
+			availables.append(element)
+
+	save_list_to_file("availables.txt",availables)
+
+	live_check =[]
+
+	for element in availables:
+		r = requests.get(element,proxies=proxies,verify=False)
+		if r.status_code == requests.codes.ok:
+			live_check.append(element)
+
+	save_list_to_file("live_check.txt",live_check)
